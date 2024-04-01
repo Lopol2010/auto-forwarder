@@ -1,0 +1,24 @@
+{
+  "name": "tg-msg-undeleter",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "parcel build src/app.js --out-dir dist"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "data-store": "^4.0.3",
+    "dotenv": "^16.4.5",
+    "fs": "^0.0.1-security",
+    "input": "^1.0.1",
+    "store2": "^2.14.3",
+    "telegram": "^2.20.2"
+  },
+  "devDependencies": {
+    "parcel-bundler": "^1.12.5"
+  }
+}
