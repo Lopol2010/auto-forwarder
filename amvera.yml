@@ -1,0 +1,12 @@
+meta:
+  environment: node
+  toolchain: pnpm
+  version: "20"
+build:
+  skip: false
+  additionalCommands: pnpm run build
+run:
+  scriptName: built/app.js
+  command: node built/app.js
+  persistenceMount: /data
+  containerPort: "80"
