@@ -1,10 +1,10 @@
 meta:
   environment: node
-  toolchain: pnpm
+  toolchain: npm
   version: "20"
 build:
   skip: false
-  additionalCommands: pnpm run build
+  additionalCommands: npm run build
 run:
   scriptName: built/app.js
   command: node built/app.js

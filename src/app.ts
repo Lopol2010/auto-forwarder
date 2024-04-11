@@ -10,6 +10,9 @@ import { EditedMessage } from 'telegram/events/EditedMessage.js';
 
 const storeSession = new StoreSession("my_session"); 
 
+
+// TODO: create basic authorization through BOT !
+
 (async () => {
     console.log("Initialization...");
     const filePath = new URL('../package.json', import.meta.url);
