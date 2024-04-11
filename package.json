@@ -7,8 +7,7 @@
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "parcel watch src/app.ts",
-    "build": "parcel build src/app.ts"
+    "start": "npx tsc -w src/app.ts"
   },
   "author": "",
   "license": "ISC",
@@ -22,7 +21,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.12.7",
-    "parcel": "^2.12.0",
     "typescript": "^5.4.5"
   }
 }
