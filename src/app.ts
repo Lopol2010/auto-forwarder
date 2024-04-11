@@ -2,20 +2,20 @@ import os from 'os';
 import { readFile } from "fs/promises";
 import { Api, TelegramClient } from "telegram";
 import { StoreSession } from "telegram/sessions/index.js";
+// @ts-ignore
 import input from "input";
-import dotenv from 'dotenv';
+import env from './env.js';
 import { NewMessage } from 'telegram/events/index.js';
 import { EditedMessage } from 'telegram/events/EditedMessage.js';
 
-dotenv.config();
-
-const storeSession = new StoreSession("my_session"); // fill this later with the value from session.save()
-const CHANNEL_ID_TO_SAVE_MESSAGES = Number.parseInt(process.env.CHANNEL_ID_TO_SAVE_MESSAGES);
+const storeSession = new StoreSession("my_session"); 
 
 (async () => {
     console.log("Initialization...");
-    const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url)));
-    const client = new TelegramClient(storeSession, Number.parseInt(process.env.API_ID), process.env.API_HASH, {
+    const filePath = new URL('../package.json', import.meta.url);
+    const fileContentString = (await readFile(filePath)).toString();
+    const pkg = JSON.parse(fileContentString);
+    const client = new TelegramClient(storeSession, env.API_ID, env.API_HASH, {
         connectionRetries: 5,
         deviceModel: `${pkg.name}@${os.hostname()}`,
         systemVersion: os.version() || 'Unknown',
@@ -46,7 +46,8 @@ const CHANNEL_ID_TO_SAVE_MESSAGES = Number.parseInt(process.env.CHANNEL_ID_TO_SA
             // maybe will have to use session storage to get accessHash, 
             // because on 'sender' the accessHash is marked as not guaranteed to be there 
             // const UserInputInfo = storeSession.getInputEntity(event.message);
-            const sender = await message.getSender();
+            const sender = await message.getSender() as Api.User;
+            if(!sender) throw new Error();
 
             // basic way to stop client in case of emergency
             if(sender.self && message.text == "stop") {
@@ -59,12 +60,13 @@ const CHANNEL_ID_TO_SAVE_MESSAGES = Number.parseInt(process.env.CHANNEL_ID_TO_SA
             }
 
             await client.sendMessage(
-                CHANNEL_ID_TO_SAVE_MESSAGES, {
-                    message: `@${sender.username} | ${sender.id.value} | ${sender.accessHash?.value}`
+                env.CHANNEL_ID_TO_SAVE_MESSAGES, {
+                    message: `@${sender.username} | ${sender.id} | ${sender.accessHash}`
                 } 
             );
-            await client.forwardMessages(CHANNEL_ID_TO_SAVE_MESSAGES, {
+            await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
                 messages: event.message,
+                fromPeer: "me"
             })
         }
     }, new NewMessage({ incoming: true, blacklistChats: true }))
@@ -72,14 +74,15 @@ const CHANNEL_ID_TO_SAVE_MESSAGES = Number.parseInt(process.env.CHANNEL_ID_TO_SA
     client.addEventHandler(async (event) => {
         const message = event.message;
         if ((event.isPrivate == undefined || event.isPrivate) && !event.isChannel && !event.isGroup) {
-            const sender = await message.getSender();
+            const sender = await message.getSender() as Api.User;
             await client.sendMessage(
-                CHANNEL_ID_TO_SAVE_MESSAGES, {
-                    message: `edited message\n@${sender.username} | ${sender.id.value} | ${sender.accessHash?.value}`
+                env.CHANNEL_ID_TO_SAVE_MESSAGES, {
+                    message: `edited message\n@${sender.username} | ${sender.id} | ${sender.accessHash}`
                 } 
             );
-            await client.forwardMessages(CHANNEL_ID_TO_SAVE_MESSAGES, {
+            await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
                 messages: event.message,
+                fromPeer: "me"
             })
         }
     }, new EditedMessage({ incoming: true, blacklistChats: true }))
