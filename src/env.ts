@@ -1,11 +1,15 @@
-import dotenv from 'dotenv';
+import { cleanEnv, str, num } from "envalid";
+// import { env } from "custom-env";
+// env(true);
+require("custom-env").env(true);
 
-dotenv.config();
+const env = cleanEnv (process.env, { 
+    API_HASH: str(),
+    CHANNEL_ID_TO_SAVE_MESSAGES: num(),
+    API_ID: num(),
+    BOT_TOKEN: str()
+});
 
-const env = {
-    API_HASH: process.env.API_HASH || "",
-    CHANNEL_ID_TO_SAVE_MESSAGES: Number.parseInt(process.env.CHANNEL_ID_TO_SAVE_MESSAGES || ""),
-    API_ID: Number.parseInt(process.env.API_ID || "")
-}
+// console.log(env)
 
 export default env;

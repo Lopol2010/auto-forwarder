@@ -3,5 +3,9 @@ node_modules
 .parcel-cache
 dist
 built
-.env
-my_session
+.env*
+!.env.example
+bot_sessions
+userbots_sessions
+conversation_session
+userbot_sessions_ids.json
