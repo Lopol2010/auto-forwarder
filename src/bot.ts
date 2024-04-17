@@ -90,35 +90,48 @@ async function auth_client(conversation: MyConversation, ctx: MyContext) {
         return;
     }
 
-    await client.start({
+    let resolveOutside = (value: string) => { conversation.log("dummy resolveOutside is called"); }
+    client.start({
         phoneNumber: async () => new Promise(async (resolve, reject) => {
-            let msgAsk = await ctx.reply("Enter your phone number");
-            let answer = await conversation.waitFor(":text");
-            resolve(answer.msg.text);
+            resolveOutside = resolve;
         }),
         password: async () => new Promise(async (resolve, reject) => {
-            let msgAsk = await ctx.reply("Enter your password");
-            let answer = await conversation.waitFor(":text");
-            answer.deleteMessage();
-            msgAsk.delete();
-            resolve(answer.msg.text);
+            // these delete requests caused problems?
+            // hydrate need to be installed differently when used with 'conversations' plugin...
+            // maybe that is the problem...
+            // answer.deleteMessage();
+            // msgAsk.delete();
+            resolveOutside = resolve;
         }),
         phoneCode: async () => new Promise(async (resolve, reject) => {
-            //TODO: restart this Q&A if code not preceded with underscore
-            let msgAsk = await ctx.reply(
-                "Enter phone code received from telegram\n\
-                Precede with underscore! Example: _00000)"
-            );
-            let answer = await conversation.waitFor(":text");
-            resolve(answer.msg.text);
+            resolveOutside = resolve;
         }),
         onError: async (err) => {
             console.log("client.start error: " + err);
-            await ctx.conversation.exit()
-            await conversation.skip();
+            try {
+                await ctx.conversation.exit();
+                await conversation.skip();
+            } catch (error) {
+                console.log("failed conversation exit with error: " + error);
+            }
             return true;
         },
     });
+
+    let msgAsk = await ctx.reply("Enter your phone number");
+    let answer = await conversation.waitFor(":text");
+    if (resolveOutside)
+        resolveOutside(answer.msg.text);
+
+    msgAsk = await ctx.reply("Enter phone code received from telegram, precede with underscore! Example: _00000");
+    answer = await conversation.waitFor(":text");
+    if (resolveOutside)
+        resolveOutside(answer.msg.text);
+
+    msgAsk = await ctx.reply("Enter your password");
+    answer = await conversation.waitFor(":text");
+    if (resolveOutside)
+        resolveOutside(answer.msg.text);
 
     await ctx.reply("You were logged in, everything should work now.");
     let isLoggedInUserIdSaved = (await db.find<number>("/ids", (entry, i) => entry == userId)) != undefined;
