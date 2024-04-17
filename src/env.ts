@@ -7,7 +7,8 @@ const env = cleanEnv (process.env, {
     API_HASH: str(),
     CHANNEL_ID_TO_SAVE_MESSAGES: num(),
     API_ID: num(),
-    BOT_TOKEN: str()
+    BOT_TOKEN: str(),
+    NODE_ENV: str()
 });
 
 // console.log(env)

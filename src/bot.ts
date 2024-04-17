@@ -9,6 +9,7 @@ import { Conversation, ConversationFlavor, conversations, createConversation } f
 import { getSessionName, newTelegramClient as getClientForUserId, sendCode, setupClientHandlers, userbotsPool, newTelegramClient } from './userbot.js';
 import { Config, JsonDB } from 'node-json-db';
 
+// TODO: double check that storage stuff in every place is compatible with dev and prod environments (no data conflicts, which is the problem now with 'ids') 
 
 // TODO: add environment switch via .env variable (will affect userbot and bot startup)
 // TODO: to restart userbots, we need to save their session name in place where we can retrieve it later during startup of the server
@@ -51,7 +52,7 @@ const db = new JsonDB(new Config("userbot_sessions_ids", true, true, '/'));
 
 const bot = new Bot<MyContext>(env.BOT_TOKEN, {
     client: {
-        environment: "test"
+        environment: env.NODE_ENV === "prod" ? "prod" : "test"
     }
 });
 

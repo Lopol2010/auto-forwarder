@@ -36,9 +36,20 @@ export async function newTelegramClient(userId: number) {
         return cachedClient;
     }
 
+    // TODO: maybe should have different session names for dev and prod....
+    // but not sure, since userId is different on test DCs
     const storeSession = new StoreSession(getSessionName(userId));
-    storeSession.setDC(2, "149.154.167.40", 443);
-    storeSession.save();
+
+    console.log ("NODE_ENV: " + env.NODE_ENV);
+    if (env.NODE_ENV === "dev") {
+
+        storeSession.setDC(2, "149.154.167.40", 443);
+        storeSession.save();
+    } else {
+
+        storeSession.setDC(2, "149.154.167.51", 443);
+        storeSession.save();
+    }
 
     const clientMetaInfo = await getClientMetaInfo();
     const client = new TelegramClient(storeSession, env.API_ID, env.API_HASH, {

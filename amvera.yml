@@ -6,7 +6,6 @@ build:
   skip: false
   additionalCommands: npm run build
 run:
-  scriptName: built/bot.js
   command: npm run startProd
   persistenceMount: /data
   containerPort: "80"
