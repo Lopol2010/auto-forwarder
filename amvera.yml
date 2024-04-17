@@ -4,7 +4,7 @@ meta:
   version: "20"
 build:
   skip: false
-  additionalCommands: npm run build
+  additionalCommands: npm install && npm run build
 run:
   command: npm run startProd
   persistenceMount: /data

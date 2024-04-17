@@ -1,8 +1,8 @@
 {
-  "name": "tg-msg-undeleter",
+  "name": "auto-forwarder",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/app.js",
+  "description": "forwards DMs into channel",
+  "main": "built/bot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "startDev": "cross-env NODE_ENV=dev node built/bot.js",
@@ -10,7 +10,7 @@
     "watch": "tsc -w -p ./tsconfig.json",
     "build": "tsc -p ./tsconfig.json"
   },
-  "author": "",
+  "author": "Lopol2010",
   "license": "ISC",
   "dependencies": {
     "@grammyjs/conversations": "^1.2.0",
