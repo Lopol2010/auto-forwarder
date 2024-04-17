@@ -23,16 +23,15 @@ import { Config, JsonDB } from 'node-json-db';
 
 
 interface SessionData {
-    authParams: {
-        phoneNumber?: string,
-        password?: string,
+    authParams?: {
+        // phoneNumber?: string,
+        // password?: string,
         // phoneCodeResolve?: (phoneCode: string) => void,
         // phoneCodeReject?: () => void,
     },
 }
 
-type MyContext = HydrateFlavor<Context> & SessionFlavor<SessionData> & ConversationFlavor;
-type MyConversation = Conversation<MyContext>;
+type MyContext = HydrateFlavor<Context> & SessionFlavor<SessionData>;
 
 const db = new JsonDB(new Config("userbot_sessions_ids", true, true, '/'));
 (async function () {
@@ -63,76 +62,57 @@ bot.use(async (ctx: Context, next: NextFunction) => {
 bot.use(hydrate());
 bot.use(
     session({
-        type: "multi",
-        authParams: {
-            // storage: new MemorySessionStorage(),
-            // initial: () => ({}),
-            // getSessionKey: (ctx) => ctx.chat?.id.toString()
-        },
-        conversation: {
-            storage: new FileAdapter({
-                dirName: "conversation_session",
-            })
-        }
+        // type: "multi",
+        // authParams: { },
     })
 );
-bot.use(conversations());
 
-async function auth_client(conversation: MyConversation, ctx: MyContext) {
+//TODO:  this approach with global variable won't work if there is multiple users authorizing!
+let authResolver: ((value: string) => void) | null;
+bot.command("start", async (ctx) => {
 
-    let userId = ctx.from?.id;
-    if (!userId) return;
-
+    const userId = ctx.chat.id;
     let client = await newTelegramClient(userId);
 
     if (client.connected && await client.isUserAuthorized()) {
         await ctx.reply("You are already authorized!");
         return;
     }
-    await client.start({
+
+
+    client.start({
         phoneNumber: async () => new Promise(async (resolve, reject) => {
-            let msgAsk = await ctx.reply("Enter your phone number");
-            let answer = await conversation.form.text();
-            resolve(answer);
+            await ctx.reply("Enter your phone number");
+            authResolver = resolve;
         }),
         password: async () => new Promise(async (resolve, reject) => {
-            let msgAsk = await ctx.reply("Enter your password");
-            let answer = await conversation.form.text();
-            resolve(answer);
+            await ctx.reply("Enter your password");
+            authResolver = resolve;
         }),
         phoneCode: async () => new Promise(async (resolve, reject) => {
-            //TODO: restart this Q&A if code not preceded with underscore
-            let msgAsk = await ctx.reply(
-                "Enter phone code received from telegram\n\
-                Precede with underscore! Example: _00000)"
-            );
-            let answer = await conversation.form.text();
-            resolve(answer.slice(1));
+            let msgAsk = await ctx.reply("Enter phone code received from telegram, precede with underscore! Example: _00000");
+            // authResolver = (value: string) => resolve(value.slice(1));
+            authResolver = resolve;
         }),
         onError: async (err) => {
             console.log("client.start error: " + err);
-            await ctx.conversation.exit()
-            await conversation.skip();
             return true;
         },
+    }).then(async () => {
+        authResolver = null;
+
+        await ctx.reply("You were logged in, everything should work now.");
+        let isLoggedInUserIdSaved = (await db.find<number>("/ids", (entry, i) => entry == userId)) != undefined;
+        if (!isLoggedInUserIdSaved) {
+            db.push("/ids[]", userId)
+        }
+        setupClientHandlers(client);
     });
-
-    await ctx.reply("You were logged in, everything should work now.");
-    let isLoggedInUserIdSaved = (await db.find<number>("/ids", (entry, i) => entry == userId)) != undefined;
-    if (!isLoggedInUserIdSaved) {
-        db.push("/ids[]", userId)
-    }
-    setupClientHandlers(client);
-}
-bot.use(createConversation(auth_client));
-
-bot.command("start", async (ctx) => {
-    await ctx.conversation.enter("auth_client");
 });
 
-bot.on("message", (ctx) => {
-
-    // ctx.reply(ctx.msg.text || "");
+bot.on("message:text", (ctx) => {
+    console.log('authResolver being called!');
+    authResolver?.(ctx.message.text);
 });
 
 bot.catch((e) => {
