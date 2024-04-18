@@ -3,21 +3,28 @@ import { readFile } from "fs/promises";
 import { Api, TelegramClient, password } from "telegram";
 import { StoreSession } from "telegram/sessions/index.js";
 import env from './env';
-import { NewMessage } from 'telegram/events/index.js';
+import { NewMessage, NewMessageEvent } from 'telegram/events/index.js';
 import { EditedMessage } from 'telegram/events/EditedMessage.js';
 import { authorizedUserIds } from './jsonDB';
 import { LogLevel } from 'telegram/extensions/Logger';
 
-export const clientsPool: { [index: string]: TelegramClient } = { }
+export const clientsPool: { [index: string]: TelegramClient } = {}
+const lastSender: {
+    [clientUserId: string]: {
+        chatId: string,
+        username?: string,
+        accessHash?: string,
+    } | undefined
+} = {}
 
 export async function startAuthorizedClients() {
     await authorizedUserIds.getAll().then((client_sessions: number[]) => {
-    client_sessions.forEach(async (id, i) => {
-        console.log("trying to restore client for: " + id);
-        const client = await getClientForUserId(id);
-        console.log(`client-${id} auth status is: ${await client.isUserAuthorized()}`);
-    });
-})
+        client_sessions.forEach(async (id, i) => {
+            console.log("trying to restore client for: " + id);
+            const client = await getClientForUserId(id);
+            console.log(`client-${id} auth status is: ${await client.isUserAuthorized()}`);
+        });
+    })
 }
 
 export async function getClientForUserId(userId: number) {
@@ -65,12 +72,12 @@ export function setupClientHandlers(client: TelegramClient) {
                     await client.disconnect();
                 }
             }
-
-            await client.sendMessage(
-                env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                message: `@${sender.username} | ${sender.id} | ${sender.accessHash}`
+            
+            if (await isSenderChanged(client, sender)) {
+                await client.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
+                    message: `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
+                });
             }
-            );
             await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
                 messages: event.message,
                 fromPeer: "me"
@@ -85,11 +92,11 @@ export function setupClientHandlers(client: TelegramClient) {
             const sender = await message.getSender() as Api.User;
             if (!sender || sender.bot) return;
 
-            await client.sendMessage(
-                env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                message: `edited message\n@${sender.username} | ${sender.id} | ${sender.accessHash}`
+            if (await isSenderChanged(client, sender)) {
+                await client.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
+                    message: `edited message\n${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
+                });
             }
-            );
             await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
                 messages: event.message,
                 fromPeer: "me"
@@ -97,6 +104,26 @@ export function setupClientHandlers(client: TelegramClient) {
         }
     }, new EditedMessage({ incoming: true, blacklistChats: true }))
 
+}
+
+async function isSenderChanged(client: TelegramClient, sender: Api.User) {
+
+    const myId = (await client.getMe(true) as Api.InputPeerUser).userId.toString();
+    const lastSenderInfo = lastSender[myId];
+    if (lastSenderInfo) {
+
+        const isSenderSame = lastSenderInfo.chatId == sender.id.toString() &&
+            lastSenderInfo.username == sender.username &&
+            lastSenderInfo.accessHash == sender.accessHash;
+
+        if (isSenderSame) return false;
+    }
+    lastSender[myId] = {
+        chatId: sender.id.toString(),
+        username: sender.username,
+        accessHash: sender.accessHash?.toString()
+    }
+    return true;
 }
 
 async function getDeviceInfo() {
