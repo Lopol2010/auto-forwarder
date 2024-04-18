@@ -70,7 +70,14 @@ export function setupClientHandlers(client: TelegramClient) {
                 if (message.text == "stop") {
                     await client.sendMessage(sender, { message: 'disconnecting client!' });
                     await client.disconnect();
+                } else if (message.text.startsWith("sendMessage")) {
+                    let matchArr = message.text.match(/([^ ]*) ([^ ]*) (.*)/);
+                    if(matchArr) {
+                        let [, , userId, msgText] = matchArr;
+                        await client.sendMessage(userId, { message: msgText });
+                    }
                 }
+                return;
             }
             
             if (await isSenderChanged(client, sender)) {
@@ -90,7 +97,7 @@ export function setupClientHandlers(client: TelegramClient) {
 
             const message = event.message;
             const sender = await message.getSender() as Api.User;
-            if (!sender || sender.bot) return;
+            if (!sender || sender.bot || sender.self) return;
 
             if (await isSenderChanged(client, sender)) {
                 await client.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
