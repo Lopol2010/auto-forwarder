@@ -7,6 +7,7 @@ import { NewMessage, NewMessageEvent } from 'telegram/events/index.js';
 import { EditedMessage } from 'telegram/events/EditedMessage.js';
 import { authorizedUserIds } from './jsonDB';
 import { LogLevel } from 'telegram/extensions/Logger';
+import { bot } from './bot';
 
 export const clientsPool: { [index: string]: TelegramClient } = {}
 const lastSender: {
@@ -72,23 +73,27 @@ export function setupClientHandlers(client: TelegramClient) {
                     await client.disconnect();
                 } else if (message.text.startsWith("sendMessage")) {
                     let matchArr = message.text.match(/([^ ]*) ([^ ]*) (.*)/);
-                    if(matchArr) {
+                    if (matchArr) {
                         let [, , userId, msgText] = matchArr;
                         await client.sendMessage(userId, { message: msgText });
                     }
                 }
                 return;
             }
-            
+
             if (await isSenderChanged(client, sender)) {
-                await client.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                    message: `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
-                });
+                // TODO: message can contain a lot of stuff, including photos that are burn after viewed...
+                //       probably would be good to handle as much cases as possible, not only text.
+                //       maybe I could find solution in google and just copy it 
+                bot.api.sendMessage(
+                    env.CHANNEL_ID_TO_SAVE_MESSAGES,
+                    `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
+                ).catch(console.log);
             }
-            await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                messages: event.message,
-                fromPeer: "me"
-            })
+
+            bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text)
+                .catch(console.log);
+
         }
     }, new NewMessage({ incoming: true, blacklistChats: true }))
 
@@ -100,14 +105,14 @@ export function setupClientHandlers(client: TelegramClient) {
             if (!sender || sender.bot || sender.self) return;
 
             if (await isSenderChanged(client, sender)) {
-                await client.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                    message: `edited message\n${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
-                });
+                bot.api.sendMessage(
+                    env.CHANNEL_ID_TO_SAVE_MESSAGES,
+                    `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
+                ).catch(console.log);
             }
-            await client.forwardMessages(env.CHANNEL_ID_TO_SAVE_MESSAGES, {
-                messages: event.message,
-                fromPeer: "me"
-            })
+
+            bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text)
+                .catch(console.log);
         }
     }, new EditedMessage({ incoming: true, blacklistChats: true }))
 
@@ -146,5 +151,5 @@ async function getDeviceInfo() {
 }
 
 export function getSessionName(userId: number) {
-    return "client_sessions/" + userId.toString();
+    return `client-sessions-${userId.toString()}-${env.NODE_ENV}`;
 }

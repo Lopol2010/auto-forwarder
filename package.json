@@ -11,7 +11,7 @@
     "startProd": "cross-env NODE_ENV=prod node built/app.js",
     "watch": "tsc -w -p ./tsconfig.json",
     "build": "tsc -p ./tsconfig.json",
-    "clean": "rimraf client_sessions && rimraf authorized_users.json"
+    "clean": "rimraf client-sessions* && rimraf authorized-users*"
   },
   "author": "Lopol2010",
   "license": "ISC",

@@ -5,7 +5,6 @@ dist
 built
 .env*
 !.env.example
-bot_sessions
-client_sessions
-conversation_session
-authorized_users.json
+bot-sessions
+client-sessions*
+authorized-users*
