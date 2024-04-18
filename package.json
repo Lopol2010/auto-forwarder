@@ -2,28 +2,28 @@
   "name": "auto-forwarder",
   "version": "1.0.0",
   "description": "forwards DMs into channel",
-  "main": "built/bot.js",
+  "main": "built/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "startDev": "cross-env NODE_ENV=dev node built/bot.js",
-    "startProd": "cross-env NODE_ENV=prod node built/bot.js",
+    "cleanDeployDev": "pnpm clean && pnpm build && cross-env NODE_ENV=dev node built/app.js",
+    "cleanDeployProd": "pnpm clean && pnpm build && cross-env NODE_ENV=prod node built/app.js",
+    "startDev": "cross-env NODE_ENV=dev node built/app.js",
+    "startProd": "cross-env NODE_ENV=prod node built/app.js",
     "watch": "tsc -w -p ./tsconfig.json",
-    "build": "tsc -p ./tsconfig.json"
+    "build": "tsc -p ./tsconfig.json",
+    "clean": "rimraf client_sessions && rimraf authorized_users.json"
   },
   "author": "Lopol2010",
   "license": "ISC",
   "dependencies": {
-    "@grammyjs/conversations": "^1.2.0",
     "@grammyjs/hydrate": "^1.4.1",
     "@grammyjs/storage-file": "^2.4.2",
     "custom-env": "^2.0.2",
-    "data-store": "^4.0.3",
     "envalid": "^8.0.0",
     "fs": "^0.0.1-security",
     "grammy": "^1.22.4",
-    "input": "^1.0.1",
     "node-json-db": "^2.3.0",
-    "store2": "^2.14.3",
+    "rimraf": "^5.0.5",
     "telegram": "^2.20.2"
   },
   "devDependencies": {

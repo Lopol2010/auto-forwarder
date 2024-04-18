@@ -6,6 +6,6 @@ built
 .env*
 !.env.example
 bot_sessions
-userbots_sessions
+client_sessions
 conversation_session
-userbot_sessions_ids.json
+authorized_users.json

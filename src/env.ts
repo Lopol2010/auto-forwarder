@@ -8,6 +8,7 @@ const env = cleanEnv (process.env, {
     CHANNEL_ID_TO_SAVE_MESSAGES: num(),
     API_ID: num(),
     BOT_TOKEN: str(),
+    DC_IP: str(),
     NODE_ENV: str()
 });
 
