@@ -115,6 +115,7 @@ export async function setupClientHandlers(client: TelegramClient) {
                             if (media instanceof Api.MessageMediaPhoto) {
                                 bot.api.sendPhoto(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                             } else if (media instanceof Api.MessageMediaDocument) {
+
                                 if (media.video) {
                                     bot.api.sendVideo(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else if (media.round) {
@@ -123,33 +124,15 @@ export async function setupClientHandlers(client: TelegramClient) {
                                     bot.api.sendVoice(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else if (media.document) {
                                     let document = media.document as Api.Document
-                                    let docType: string = "doc";
                                     let attributes = document.attributes;
-                                    // export type TypeDocumentAttribute =
-                                    //     | DocumentAttributeImageSize
-                                    //     | DocumentAttributeAnimated
-                                    //     | DocumentAttributeSticker
-                                    //     | DocumentAttributeVideo
-                                    //     | DocumentAttributeAudio
-                                    //     | DocumentAttributeFilename
-                                    //     | DocumentAttributeHasStickers
-                                    //     | DocumentAttributeCustomEmoji;
-                                    for (let attr of attributes) {
-                                        if (attr instanceof Api.DocumentAttributeFilename) {
-                                            // bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, "fileName: " + attr.fileName).catch(console.log);
-                                            inputFile = new InputFile(downloadedMedia, attr.fileName);
-                                        } else if (attr instanceof Api.DocumentAttributeSticker) {
-                                            docType = "sticker"
-                                        }
-                                        else if (attr instanceof Api.DocumentAttributeAnimated) {
-                                            docType = "animated"
-                                        }
+                                    let fileNameAttr = attributes.find((attr) => attr instanceof Api.DocumentAttributeFilename) as Api.DocumentAttributeFilename;
+                                    let fileName: string;
+                                    if(fileNameAttr) {
+                                        fileName = fileNameAttr.fileName;
+                                        console.log("uploading: " + fileName);
+                                        inputFile = new InputFile(downloadedMedia, fileName);
                                     }
-                                    if (docType == "sticker") {
-                                        bot.api.sendSticker(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
-                                    } else {
-                                        bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
-                                    }
+                                    bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else {
                                     bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 }
