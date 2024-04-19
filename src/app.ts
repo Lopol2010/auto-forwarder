@@ -5,7 +5,7 @@ import { Bot, Context, MemorySessionStorage, NextFunction, SessionFlavor, sessio
 import { FileAdapter } from '@grammyjs/storage-file';
 import { TelegramClient, client } from 'telegram';
 import { hydrate, HydrateFlavor } from "@grammyjs/hydrate";
-import { getSessionName, getClientForUserId, setupClientHandlers, clientsPool, startAuthorizedClients as launchAllAuthorizedClients } from './clientsPool.js';
+import { getSessionName, getClientForUserId, setupClientHandlers, clientsPool, launchAllAuthorizedClients } from './clientsPool.js';
 import { Config, JsonDB } from 'node-json-db';
 import { authorizedUserIds } from './jsonDB';
 import { bot } from './bot';
