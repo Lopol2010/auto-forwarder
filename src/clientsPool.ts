@@ -25,7 +25,7 @@ export async function launchAllAuthorizedClients() {
         client_sessions.forEach(async (id, i) => {
             console.log("trying to restore client for: " + id);
             const client = await getClientForUserId(id);
-            console.log(`client-${id} auth status is: ${await client.isUserAuthorized()}`);
+            console.log(`is client-${id} authorized: ${await client.isUserAuthorized()}`);
         });
     })
 }
@@ -36,7 +36,6 @@ export async function getClientForUserId(userId: number) {
         return cachedClient;
     }
 
-    // TODO: maybe should have different session names for dev and prod....
     const storeSession = new StoreSession(getSessionName(userId));
 
     storeSession.setDC(2, env.DC_IP, 443);
@@ -84,62 +83,48 @@ export async function setupClientHandlers(client: TelegramClient) {
             }
 
             if (await isSenderChanged(client, sender)) {
-                // TODO: message can contain a lot of stuff, including photos that are burn after viewed...
-                //       probably would be good to handle as much cases as possible, not only text.
-                //       maybe I could find solution in google and just copy it 
-                bot.api.sendMessage(
+                await bot.api.sendMessage(
                     env.CHANNEL_ID_TO_SAVE_MESSAGES,
                     `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
                 ).catch(console.log);
             }
 
             if (message.text)
-                bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text).catch(console.log);
+                await bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text).catch(console.log);
 
 
             const media = message.media;
             if (media) {
 
-                // TODO: research Document and TypeDocumentAttribute
-                //      maybe also research "file reference" of the document
-                //      also look at altDocument 
-                // TODO: research https://github.com/gram-js/gramjs/blob/0471403aa309522ab594d8b67c0bf6cd68ae8feb/gramjs/Utils.ts#L12
-                //      and other function in Utils.ts
-                //      see where and how they used in gramjs! maybe they're useful for me...
-                message.downloadMedia()
-                    .then(downloadedMedia => {
+                await message.downloadMedia()
+                    .then(async downloadedMedia => {
                         console.log("downloaded media of type " + media.className + " and length: " + downloadedMedia?.length);
                         if (downloadedMedia && downloadedMedia.length > 0) {
                             let inputFile = new InputFile(downloadedMedia);
-                            
+
                             if (media instanceof Api.MessageMediaPhoto) {
-                                bot.api.sendPhoto(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
+                                return bot.api.sendPhoto(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                             } else if (media instanceof Api.MessageMediaDocument) {
 
                                 if (media.video) {
-                                    bot.api.sendVideo(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
+                                    return bot.api.sendVideo(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else if (media.round) {
-                                    bot.api.sendVideoNote(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
+                                    return bot.api.sendVideoNote(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else if (media.voice) {
-                                    bot.api.sendVoice(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
+                                    return bot.api.sendVoice(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 } else if (media.document) {
                                     let document = media.document as Api.Document
                                     let attributes = document.attributes;
                                     let fileNameAttr = attributes.find((attr) => attr instanceof Api.DocumentAttributeFilename) as Api.DocumentAttributeFilename;
                                     let fileName: string;
-                                    if(fileNameAttr) {
+                                    if (fileNameAttr) {
                                         fileName = fileNameAttr.fileName;
                                         console.log("uploading: " + fileName);
                                         inputFile = new InputFile(downloadedMedia, fileName);
                                     }
-                                    bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
-                                } else {
-                                    bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                                 }
                             }
-                            else {
-                                bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
-                            }
+                            return bot.api.sendDocument(env.CHANNEL_ID_TO_SAVE_MESSAGES, inputFile).catch(console.log)
                         }
                     })
                     .catch(console.log)
@@ -155,14 +140,14 @@ export async function setupClientHandlers(client: TelegramClient) {
             if (!sender || sender.bot || sender.self) return;
 
             if (await isSenderChanged(client, sender)) {
-                bot.api.sendMessage(
+                await bot.api.sendMessage(
                     env.CHANNEL_ID_TO_SAVE_MESSAGES,
                     `${sender.username ? "@" + sender.username : "-"} | ${sender.id} | ${sender.accessHash}`
                 ).catch(console.log);
             }
 
             if (message.text)
-                bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text).catch(console.log);
+                await bot.api.sendMessage(env.CHANNEL_ID_TO_SAVE_MESSAGES, message.text).catch(console.log);
         }
     }, new EditedMessage({ incoming: true, blacklistChats: true }))
 
